@@ -1,0 +1,45 @@
+version: '3.4'
+
+
+services:
+  sqlserver:
+    image: microsoft/mssql-server-linux:latest
+    container_name: sqlserver
+    volumes:
+      - sqlserverdata:/var/opt/mssql 
+    ports:
+      - "1434:1433"
+    environment:
+      - ACCEPT_EULA=Y 
+      - MSSQL_PID=Developer
+      - SA_PASSWORD=8jkGh47hnDw89Haq8LN2
+
+  authenticationservice:
+    image: doverdiek/s7fontys:authenticationservice
+    build:
+      context: .
+      dockerfile: AuthenticationService/Dockerfile
+
+  chatservice:
+    image: doverdiek/s7fontys:chatservice
+    build:
+      context: .
+      dockerfile: ChatService/Dockerfile
+
+
+  crudservice:
+    image: doverdiek/s7fontys:crudservice
+    build:
+      context: .
+      dockerfile: CRUDService/Dockerfile
+
+
+  userservice:
+    image: doverdiek/s7fontys:userservice
+    build:
+      context: .
+      dockerfile: UserService/Dockerfile
+
+volumes:
+  sqlserverdata:
+    external: true

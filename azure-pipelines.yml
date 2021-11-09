@@ -1,0 +1,48 @@
+
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- master
+
+variables:
+    azureContainerRegistry: azure
+
+pool:
+  vmImage: 'ubuntu-16.04'
+
+steps:
+- task: DockerCompose@0
+  displayName: Build services
+  inputs:
+    action: Build services
+    containerregistrytype: Container Registry
+    dockerRegistryEndpoint: $(azureContainerRegistry)
+    dockerComposeFile: docker-compose.yml
+    projectName: $(Build.Repository.Name)
+    qualifyImageNames: true
+    additionalImageTags: $(Build.BuildId)
+    
+- task: DockerCompose@0
+  displayName: Push services
+  inputs:
+    action: Push services
+    containerregistrytype: Container Registry
+    dockerRegistryEndpoint: $(azureContainerRegistry)
+    dockerComposeFile: docker-compose.yml
+    projectName: $(Build.Repository.Name)
+    qualifyImageNames: true
+
+
+- task: Kubernetes@1
+  inputs:
+    connectionType: 'Kubernetes Service Connection'
+    kubernetesServiceEndpoint: 'kubernetes'
+    command: 'apply'
+    useConfigurationFile: true
+    configuration: 'chatappdeployment.yaml'
+    secretType: 'dockerRegistry'
+    containerRegistryType: 'Azure Container Registry'
+
+

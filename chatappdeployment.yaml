@@ -1,0 +1,261 @@
+# DEPLOYMENTS
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clientapplicatie-deployment
+  namespace: default
+  labels:
+    app: clientapplicatie
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: clientapplicatie
+  template:
+    metadata:
+      labels:
+        app: clientapplicatie
+    spec:
+      containers:
+      - name: clientapplicatie
+        image: "doverdiek/s7fontys:clientapplicatie"
+        imagePullPolicy: "Always"
+        ports:
+        - containerPort: 443
+        - containerPort: 80
+      imagePullSecrets:
+      - name: regcred
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: authenticationservice-deployment
+  namespace: default
+  labels:
+    app: authenticationservice
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: authenticationservice
+  template:
+    metadata:
+      labels:
+        app: authenticationservice
+    spec:
+      containers:
+      - name: authenticationservice
+        image: "doverdiek/s7fontys:authenticationservice"
+        imagePullPolicy: "Always"
+        ports:
+        - containerPort: 80
+        - containerPort: 443
+      imagePullSecrets:
+      - name: regcred
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crudservice-deployment
+  namespace: default
+  labels:
+    app: crudservice
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: crudservice
+  template:
+    metadata:
+      labels:
+        app: crudservice
+    spec:
+      containers:
+      - name: crudservice
+        image: "doverdiek/s7fontys:crudservice"
+        imagePullPolicy: "Always"
+        ports:
+        - containerPort: 80
+        - containerPort: 443
+      imagePullSecrets:
+      - name: regcred
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chatservice-deployment
+  namespace: default
+  labels:
+    app: chatservice
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: chatservice
+  template:
+    metadata:
+      labels:
+        app: chatservice
+    spec:
+      containers:
+      - name: chatservice
+        image: "doverdiek/s7fontys:chatservice"
+        imagePullPolicy: "Always"
+        ports:
+        - containerPort: 443
+        - containerPort: 80
+      imagePullSecrets:
+      - name: regcred
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: userservice-deployment
+  namespace: default
+  labels:
+    app: userservice
+spec:
+  replicas: 
+  selector:
+    matchLabels:
+      app: userservice
+  template:
+    metadata:
+      labels:
+        app: userservice
+    spec:
+      containers:
+      - name: userservice
+        image: "doverdiek/s7fontys:userservice"
+        imagePullPolicy: "Always"
+        ports:
+        - containerPort: 443
+        - containerPort: 80
+      imagePullSecrets:
+      - name: regcred
+---
+# SERVICES
+apiVersion: v1
+kind: Service
+metadata:
+  name: authenticationservice
+  namespace: default
+spec:
+  type: ClusterIP
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+  - name: https
+    port: 443
+    protocol: TCP
+  selector:
+    app: authenticationservice
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: userservice
+  namespace: default
+spec:
+  type: ClusterIP
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+  - name: https
+    port: 443
+    protocol: TCP
+  selector:
+    app: userservice
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chatservice
+  namespace: default
+spec:
+  type: ClusterIP
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+  - name: https
+    port: 443
+    protocol: TCP
+  selector:
+    app: chatservice
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: clientapplicatie
+  namespace: default
+spec:
+  type: ClusterIP
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+  - name: https
+    port: 443
+    protocol: TCP
+  selector:
+    app: clientapplicatie
+apiVersion: v1
+kind: Service
+metadata:
+  name: crudservice
+  namespace: default
+spec:
+  type: ClusterIP
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+  - name: https
+    port: 443
+    protocol: TCP
+  selector:
+    app: crudservice
+---
+# INGRESS
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: chatapplication-ingress
+  namespace: default
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    certmanager.k8s.io/issuer: "letsencrypt-prod"
+    certmanager.k8s.io/acme-challenge-type: http01
+spec:
+  tls:
+  - hosts:
+    - api.overdiek.nl
+    - overdiek.nl
+    secretName: quickstart-example-tls
+  rules:
+  - host: api.overdiek.nl
+    http:
+      paths:
+      - path: /authenticationservice/.*
+        backend:
+          serviceName: authenticationservice
+          servicePort: 80
+      - path: /chatservice/.*
+        backend:
+          serviceName: chatservice
+          servicePort: 80
+      - path: /userservice/.*
+        backend:
+          serviceName: userservice
+          servicePort: 80
+  - host: overdiek.nl
+    http:
+      paths:
+      - path: /.*
+        backend:
+          serviceName: clientapplicatie
+          servicePort: 80
